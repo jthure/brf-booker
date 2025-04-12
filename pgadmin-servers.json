@@ -1,0 +1,14 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "BRF Booker DB",
+            "Group": "Servers",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "brf_booker",
+            "Username": "postgres",
+            "Password": "postgres",
+            "SSLMode": "prefer"
+        }
+    }
+} 
