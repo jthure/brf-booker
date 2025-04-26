@@ -60,13 +60,13 @@ resource "aws_security_group" "rds" {
   description = "Security group for RDS PostgreSQL database"
   vpc_id      = aws_vpc.main.id
 
-  # Allow PostgreSQL traffic from EC2 instances
+  # Allow PostgreSQL traffic from ECS tasks
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.ec2.id]
-    description     = "PostgreSQL access from EC2 instances"
+    security_groups = [aws_security_group.ecs.id]
+    description     = "PostgreSQL access from ECS tasks"
   }
 
   # Allow all outbound traffic

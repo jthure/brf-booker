@@ -1,7 +1,7 @@
 # Application Load Balancer
 resource "aws_lb" "app" {
   name               = "brf-booker-alb"
-  internal           = false
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = aws_subnet.public[*].id

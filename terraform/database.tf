@@ -40,7 +40,7 @@ resource "aws_db_instance" "postgres" {
   storage_encrypted      = true
   db_name                = var.db_name
   username               = var.db_username
-  password               = var.db_password
+  password               = random_password.db_password.result
   port                   = 5432
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
@@ -59,15 +59,3 @@ resource "aws_db_instance" "postgres" {
     Name = "brf-booker-postgres"
   }
 }
-
-# SSM Parameter Store for database connection string
-resource "aws_ssm_parameter" "database_url" {
-  name        = "/${var.environment}/brf-booker/DATABASE_URL"
-  description = "PostgreSQL connection string for the brf-booker application"
-  type        = "SecureString"
-  value       = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.endpoint}/${var.db_name}"
-
-  tags = {
-    Name = "brf-booker-database-url"
-  }
-} 

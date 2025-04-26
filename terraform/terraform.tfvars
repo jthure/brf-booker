@@ -2,12 +2,11 @@
 aws_region = "eu-north-1"  # Stockholm region, adjust as needed
 
 # Environment
-environment = "dev"  # dev, staging, prod
+environment = "staging"  # dev, staging, prod
 
 # Database Configuration
 db_name     = "brf_booker"
 db_username = "postgres"
-db_password = "your-secure-password-here"  # Replace with a secure password
 
 # VPC Configuration
 vpc_cidr = "10.0.0.0/16"

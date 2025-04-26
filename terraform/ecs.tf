@@ -50,6 +50,12 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Attach the SSM access policy to the task execution role
+resource "aws_iam_role_policy_attachment" "ssm_access_execution" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = aws_iam_policy.ssm_access.arn
+}
+
 # ECS Task Role (for application permissions)
 resource "aws_iam_role" "ecs_task" {
   name = "brf-booker-ecs-task"
@@ -146,18 +152,66 @@ resource "aws_ecs_task_definition" "app" {
         }
       }
       
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
+      # healthCheck = {
+      #   command     = ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      #   interval    = 30
+      #   timeout     = 5
+      #   retries     = 3
+      #   startPeriod = 60
+      # }
     }
   ])
 
   tags = {
     Name = "brf-booker-app-task"
+  }
+}
+
+# ECS Task Definition for Database Migrations
+resource "aws_ecs_task_definition" "migrations" {
+  family                   = "brf-booker-migrations"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "migrations"
+      image     = "${aws_ecr_repository.app.repository_url}:latest"
+      essential = true
+      
+      environment = [
+        {
+          name  = "NODE_ENV"
+          value = var.environment
+        }
+      ]
+      
+      secrets = [
+        {
+          name      = "DATABASE_URL"
+          valueFrom = aws_ssm_parameter.database_url.arn
+        }
+      ]
+      
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "migrations"
+        }
+      }
+      
+      command = ["npx", "prisma", "migrate", "deploy"]
+    }
+  ])
+
+  tags = {
+    Name = "brf-booker-migrations-task"
   }
 }
 

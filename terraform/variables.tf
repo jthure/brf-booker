@@ -41,25 +41,6 @@ variable "db_username" {
   sensitive   = true
 }
 
-variable "db_password" {
-  description = "Password for the PostgreSQL database"
-  type        = string
-  default     = null  # Should be set via terraform.tfvars or environment variable
-  sensitive   = true
-}
-
-variable "instance_type" {
-  description = "EC2 instance type"
-  type        = string
-  default     = "t3.micro"
-}
-
-variable "key_name" {
-  description = "SSH key pair name"
-  type        = string
-  default     = null  # Should be set via terraform.tfvars or environment variable
-}
-
 # ECS Configuration
 variable "ecs_cpu" {
   description = "CPU units for the ECS task (1024 = 1 vCPU)"
