@@ -14,13 +14,14 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  isAdmin   Boolean   @default(false)
-  bookings  Booking[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  cognitoId     String    @unique // This will store the Cognito user ID
+  name          String
+  email         String    @unique
+  isAdmin       Boolean   @default(false)
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Booking {

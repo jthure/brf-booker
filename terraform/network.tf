@@ -44,27 +44,6 @@ resource "aws_subnet" "private" {
   }
 }
 
-# Elastic IP for NAT Gateway
-resource "aws_eip" "nat" {
-  domain = "vpc"
-
-  tags = {
-    Name = "brf-booker-nat-eip"
-  }
-}
-
-# NAT Gateway
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
-
-  tags = {
-    Name = "brf-booker-nat-gateway"
-  }
-
-  depends_on = [aws_internet_gateway.main]
-}
-
 # Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -83,10 +62,8 @@ resource "aws_route_table" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
+  # No default route to NAT Gateway
+  # Only local VPC traffic is allowed
 
   tags = {
     Name = "brf-booker-private-rt"
@@ -107,7 +84,132 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+# VPC Endpoints for ECS, ECR, and CloudWatch Logs
+resource "aws_vpc_endpoint" "ecs" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecs"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ecs-endpoint" }
+}
+
+resource "aws_vpc_endpoint" "ecs_agent" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecs-agent"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ecs-agent-endpoint" }
+}
+
+resource "aws_vpc_endpoint" "ecs_telemetry" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecs-telemetry"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ecs-telemetry-endpoint" }
+}
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ecr-api-endpoint" }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ecr-dkr-endpoint" }
+}
+
+# VPC Endpoint for CloudWatch Logs
+resource "aws_vpc_endpoint" "cloudwatch" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.${var.aws_region}.logs"
+  
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
+  
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  
+  private_dns_enabled = true
+  
+  tags = {
+    Name = "brf-booker-cloudwatch-endpoint"
+  }
+}
+
+resource "aws_security_group" "vpc_endpoints" {
+  name_prefix = "brf-booker-vpc-endpoints-"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
+  }
+
+  tags = {
+    Name = "brf-booker-vpc-endpoints-sg"
+  }
+}
+
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ssm"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ssm-endpoint" }
+}
+
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ssmmessages-endpoint" }
+}
+
+resource "aws_vpc_endpoint" "ec2messages" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-ec2messages-endpoint" }
+}
+
+# If your SSM parameters are encrypted with a customer-managed KMS key, add:
+resource "aws_vpc_endpoint" "kms" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.kms"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = { Name = "brf-booker-kms-endpoint" }
+} 
+
 # Data source to get available AZs in the region
 data "aws_availability_zones" "available" {
   state = "available"
-} 
+}

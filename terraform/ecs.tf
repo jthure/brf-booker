@@ -109,7 +109,7 @@ resource "aws_iam_role_policy_attachment" "ssm_access" {
 resource "aws_ecs_task_definition" "app" {
   family                   = "brf-booker-app"
   network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
+  requires_compatibilities = ["EC2"]
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
@@ -171,7 +171,7 @@ resource "aws_ecs_task_definition" "app" {
 resource "aws_ecs_task_definition" "migrations" {
   family                   = "brf-booker-migrations"
   network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
+  requires_compatibilities = ["EC2"]
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
@@ -221,7 +221,7 @@ resource "aws_ecs_service" "app" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
-  launch_type     = "FARGATE"
+  launch_type     = "EC2"
 
   network_configuration {
     subnets          = aws_subnet.private[*].id
@@ -266,5 +266,93 @@ resource "aws_security_group" "ecs" {
 
   tags = {
     Name = "brf-booker-ecs-sg"
+  }
+}
+
+# IAM Role for ECS EC2 Instances
+resource "aws_iam_role" "ecs_instance" {
+  name = "brf-booker-ecs-instance-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "brf-booker-ecs-instance-role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance" {
+  role       = aws_iam_role.ecs_instance.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_instance_profile" "ecs_instance" {
+  name = "brf-booker-ecs-instance-profile"
+  role = aws_iam_role.ecs_instance.name
+}
+
+# Launch Template for ECS EC2 Instances
+resource "aws_launch_template" "ecs_ec2" {
+  name_prefix   = "brf-booker-ecs-ec2-"
+  image_id      = data.aws_ami.ecs_optimized.id
+  instance_type = var.ecs_instance_type
+  # key_name      = var.ecs_ec2_key_name
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance.name
+  }
+
+  network_interfaces {
+    security_groups = [aws_security_group.ec2.id]
+    associate_public_ip_address = false
+  }
+
+  user_data = base64encode(<<EOF
+#!/bin/bash
+echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
+EOF
+  )
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "brf-booker-ecs-ec2"
+    }
+  }
+}
+
+# Auto Scaling Group for ECS EC2 Instances
+resource "aws_autoscaling_group" "ecs_ec2" {
+  name                      = "brf-booker-ecs-ec2-asg"
+  min_size                  = var.ecs_asg_min_size
+  max_size                  = var.ecs_asg_max_size
+  desired_capacity          = var.ecs_asg_desired_capacity
+  vpc_zone_identifier       = aws_subnet.private[*].id
+  health_check_type         = "EC2"
+  health_check_grace_period = 300
+
+  launch_template {
+    id      = aws_launch_template.ecs_ec2.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "brf-booker-ecs-ec2"
+    propagate_at_launch = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 } 

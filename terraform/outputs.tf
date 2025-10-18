@@ -37,3 +37,13 @@ output "app_url" {
   description = "URL to access the Next.js application"
   value       = "http://${aws_lb.app.dns_name}"
 } 
+
+output "ecs_asg_id" {
+  description = "ID of the ECS EC2 Auto Scaling Group"
+  value       = aws_autoscaling_group.ecs_ec2.id
+}
+
+output "ecs_launch_template_id" {
+  description = "ID of the ECS EC2 Launch Template"
+  value       = aws_launch_template.ecs_ec2.id
+} 

@@ -27,5 +27,15 @@ services:
     volumes:
       - ./pgadmin-servers.json:/pgadmin4/servers.json
 
+  cognito:
+    image: jagregory/cognito-local:latest
+    ports:
+      - "9229:9229"
+    environment:
+      - DEBUG=1
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    volumes:
+      - ./cognito:/app/.cognito
+
 volumes:
   postgres_data: 

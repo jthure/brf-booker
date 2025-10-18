@@ -102,4 +102,39 @@ variable "alb_health_check_unhealthy_threshold" {
 #   description = "ARN of the ACM certificate for HTTPS"
 #   type        = string
 #   default     = null
+# }
+
+variable "domain_name" {
+  description = "The domain name for the application"
+  type        = string
+} 
+
+variable "ecs_instance_type" {
+  description = "EC2 instance type for ECS cluster nodes"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "ecs_asg_min_size" {
+  description = "Minimum number of EC2 instances in the ECS ASG"
+  type        = number
+  default     = 1
+}
+
+variable "ecs_asg_max_size" {
+  description = "Maximum number of EC2 instances in the ECS ASG"
+  type        = number
+  default     = 1
+}
+
+variable "ecs_asg_desired_capacity" {
+  description = "Desired number of EC2 instances in the ECS ASG"
+  type        = number
+  default     = 1
+}
+
+# variable "ecs_ec2_key_name" {
+#   description = "SSH key name for ECS EC2 instances (must exist in AWS)"
+#   type        = string
+#   default     = null
 # } 

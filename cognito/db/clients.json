@@ -1,0 +1,36 @@
+{
+  "Clients": {
+    "60hspbtijv617ljz8jx3wnmjv": {
+      "ClientId": "60hspbtijv617ljz8jx3wnmjv",
+      "ClientName": "brf-booker-local-client",
+      "ClientSecret": "br4hswah802i4b9wmbl6rei7i",
+      "CreationDate": "2025-04-26T20:57:41.460Z",
+      "ExplicitAuthFlows": [
+        "ALLOW_USER_PASSWORD_AUTH"
+      ],
+      "LastModifiedDate": "2025-04-26T20:57:41.460Z",
+      "TokenValidityUnits": {
+        "AccessToken": "hours",
+        "IdToken": "minutes",
+        "RefreshToken": "days"
+      },
+      "UserPoolId": "local_4NjP5nlX"
+    },
+    "7xp376rl091pb9x9sqm3r9zmj": {
+      "ClientId": "7xp376rl091pb9x9sqm3r9zmj",
+      "ClientName": "brf-booker-local-client",
+      "ClientSecret": "edl3pn63be3xu21zi62ay461p",
+      "CreationDate": "2025-04-26T21:06:15.480Z",
+      "ExplicitAuthFlows": [
+        "ALLOW_USER_PASSWORD_AUTH"
+      ],
+      "LastModifiedDate": "2025-04-26T21:06:15.480Z",
+      "TokenValidityUnits": {
+        "AccessToken": "hours",
+        "IdToken": "minutes",
+        "RefreshToken": "days"
+      },
+      "UserPoolId": "local_4eRdw5IL"
+    }
+  }
+}

@@ -28,3 +28,5 @@ alb_health_check_unhealthy_threshold = 3
 
 # Certificate ARN for HTTPS (uncomment when you have a certificate)
 # certificate_arn = "arn:aws:acm:region:account:certificate/certificate-id" 
+
+domain_name = "your-domain.com"  # Replace with your actual domain name
